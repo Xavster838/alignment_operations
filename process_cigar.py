@@ -2,16 +2,17 @@ import pysam
 from re import findall
 from itertools import starmap
 from cigar_opt_class import CigarOperation
+from cigar_opt_class import cigar_dict
 
 def get_cigarTuple_alignment_score(cigar_tuples):
     '''given a tuple of cigar operations (opt, l) return the score of these operations.
     '''
+    cigar_opt = CigarOperation()
     scores = list( starmap(cigar_opt.operation, cigar_tuples) )
     return sum(scores)
 
 def get_cigar_alignment_score(cigar_str):
     '''given a cigar string, process each operation and get the alignment score'''
-    cigar_opt = CigarOperation()
     cigar_tuples = zip(findall('[^\d+]', cigar_str), findall('\d+', cigar_str) ) #split into operations and length and zip into tuples.
     return get_cigarTuple_alignment_score(cigar_tuples)
 
@@ -20,7 +21,7 @@ def get_AlignedSegment_alignment_score(aln_seg):
     assert isinstance(aln_seg, pysam.AlignmentSegment) , "Attempting to process variable that is not a pysam AlignmentSegment"
     return get_cigar_alignment_score(aln_seg.cigarstring)
 
-def get_cigarLoc_from_rCoord( aln_seg , ref_coordinate ):
+def get_cigarLoc_from_rCoord( aln_seg , ref_coord ):
     '''given a pysam AlignmentSegment and a ref_coordinate, return the location on the cigarstring corresponding to that coordinate.
        @input: aln_seg : pysam AlignmentSegment.
        @input: ref_coordinate : integer value of the coordinate on the reference.
@@ -28,9 +29,10 @@ def get_cigarLoc_from_rCoord( aln_seg , ref_coordinate ):
     '''
     conRef_opts = [ 'M', 'D', 'N', 'E', 'X' ]
     r_loc = aln_seg.reference_start
-    assert ref_coordinate in range(aln_seg.reference_start, aln_seg.reference_end) , f"get_cigarLoc_from_rCoord Error: passed reference_coordinate {ref_coordinate} not in reference range: {aln_seg.reference_start}-{aln_seg.reference_end}"
-    for i, opt, l in enumerate(seg.cigartuples):
-        if(cigar_dict[opt] in conRef):
+    assert ref_coord in range(aln_seg.reference_start, aln_seg.reference_end) , f"get_cigarLoc_from_rCoord Error: passed reference_coordinate {ref_coordinate} not in reference range: {aln_seg.reference_start}-{aln_seg.reference_end}"
+    for i, cur_opt in enumerate( aln_seg.cigartuples ):
+        opt , l = cur_opt[0] , cur_opt[1]
+        if(cigar_dict[opt] in conRef_opts):
             l = min(l, ref_coord - r_loc)
             r_loc += l
         if(r_loc == ref_coord):
@@ -50,7 +52,7 @@ def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
     clip[0] = aln_seg.cigar[0][1] if aln_seg.cigar[0][0] in ['H' , 'S'] else 0
     clip[1] = aln_seg.cigar[-1][1] if aln_seg.cigar[-1][0] in ['H' , 'S'] else 0
     conQuery = ['M', 'I', 'E', 'X'] #removing soft clip and treating as hard clip.
-    for i in range(0,cigar_loc): #run through all operations up 
+    for i in range(0,cigar_loc[0]): #run through all operations up 
         opt , l = aln_seg.cigartuples[i]
         if( cigar_dict[opt] in conQuery ):
             q_step += l
@@ -63,13 +65,13 @@ def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
     return q_coord
 
 
-def get_qCoord_from_rCoord(aln_seg , ref_coord)
+def get_qCoord_from_rCoord(aln_seg , ref_coord):
     ''' given a pysamAlignmentSegment and ref_coordinate, returen the query coordinate cooresponding to that location.
         @input: aln_seg, ref_coord (see function get_cigarLoc_from_rCoord)
         @output : q_coordinate : coordinate in query corresponding to ref_location in the alignment.
     '''
-        cigar_loc = get_cigarLoc_from_rCoord( aln_seg , ref_coordinate )
-        return get_qCoord_from_cigarLoc( aln_seg , cigar_loc )
+    cigar_loc = get_cigarLoc_from_rCoord( aln_seg , ref_coord )
+    return get_qCoord_from_cigarLoc( aln_seg , cigar_loc )
 
 def subset_cigar(aln_seg ,ref_start , ref_end):
     '''given reference coordinates, subset a cigarstring and return the subset cigar
@@ -78,9 +80,9 @@ def subset_cigar(aln_seg ,ref_start , ref_end):
     '''
     opt_1 = get_cigarLoc_from_rCoord( aln_seg , ref_start  )
     opt_2 = get_cigarLoc_from_rCoord( aln_seg , ref_end  )
-    subset_tuples = cigar_tuples[ opt_1[0] , opt_2[0] + 1 ]
-    subset_tuples[0][1] , subset_tuples[-1][1] = opt_1[1] , opt_2[1]  #change first and last operation lengths to be what get_cigarLoc output
-
+    subset_tuples = aln_seg.cigartuples[ opt_1[0] : opt_2[0] + 1 ]    #add 1 at the end because range doens't include last element.
+    subset_tuples[0] , subset_tuples[-1] = (subset_tuples[0][0] , opt_1[1] )  , ( subset_tuples[-1][0] , opt_2[1] )  #change first and last operation lengths to be what get_cigarLoc output ; also need to reassign completely because can't reassign tuples
+    return subset_tuples
 
 
 
