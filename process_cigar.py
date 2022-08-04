@@ -49,8 +49,8 @@ def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
     q_step = 0  #how far query coordinate will be from query start
     #assert aln_seg.cigarstring.find("S") == -1 , "Error: Bam needs to be hard clipped, not soft clipped." 
     clip = [0,0]
-    clip[0] = aln_seg.cigar[0][1] if aln_seg.cigar[0][0] in ['H' , 'S'] else 0
-    clip[1] = aln_seg.cigar[-1][1] if aln_seg.cigar[-1][0] in ['H' , 'S'] else 0
+    clip[0] = aln_seg.cigar[0][1] if cigar_dict[ aln_seg.cigar[0][0] ] in ['H' , 'S'] else 0
+    clip[1] = aln_seg.cigar[-1][1] if cigar_dict[ aln_seg.cigar[-1][0] ] in ['H' , 'S'] else 0
     conQuery = ['M', 'I', 'E', 'X'] #removing soft clip and treating as hard clip.
     for i in range(0,cigar_loc[0]): #run through all operations up 
         opt , l = aln_seg.cigartuples[i]
@@ -76,7 +76,7 @@ def get_qCoord_from_rCoord(aln_seg , ref_coord):
 def subset_cigar(aln_seg ,ref_start , ref_end):
     '''given reference coordinates, subset a cigarstring and return the subset cigar
        @input : aln_seg (pysam alignment segment) , ref_start (integer) , ref_end (integer)
-       @output : 
+       @output : cigar tuples list of subset
     '''
     opt_1 = get_cigarLoc_from_rCoord( aln_seg , ref_start  )
     opt_2 = get_cigarLoc_from_rCoord( aln_seg , ref_end  )
