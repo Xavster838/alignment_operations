@@ -55,6 +55,6 @@ class CigarOperation:
         return CigarOperation.opt_M(self)
     def opt_X(self):
         '''mismatch'''
-        return self.mismatch * self.l
+        return -1 * self.mismatch * self.l
 
 
