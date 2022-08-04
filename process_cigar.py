@@ -56,7 +56,7 @@ def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
         opt , l = aln_seg.cigartuples[i]
         if( cigar_dict[opt] in conQuery ):
             q_step += l
-    q_step += cigar_loc[1]
+    q_step += cigar_loc[1] if cigar_dict[ aln_seg.cigartuples[ cigar_loc[0]][0] ] in conQuery else 0 #add to q_step if it's not hard or soft clipping
     if(aln_seg.is_reverse):
         q_coord = clip[1] + aln_seg.query_alignment_length - q_step
     else:
