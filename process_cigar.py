@@ -29,7 +29,7 @@ def get_cigarLoc_from_rCoord( aln_seg , ref_coord ):
     '''
     conRef_opts = [ 'M', 'D', 'N', 'E', 'X' ]
     r_loc = aln_seg.reference_start
-    assert ref_coord in range(aln_seg.reference_start, aln_seg.reference_end) , f"get_cigarLoc_from_rCoord Error: passed reference_coordinate {ref_coord} not in reference range: {aln_seg.reference_start}-{aln_seg.reference_end}"
+    assert ref_coord in range(aln_seg.reference_start, aln_seg.reference_end+1) , f"get_cigarLoc_from_rCoord Error: passed reference_coordinate {ref_coord} not in reference range: {aln_seg.reference_start}-{aln_seg.reference_end}"
     for i, cur_opt in enumerate( aln_seg.cigartuples ):
         opt , l = cur_opt[0] , cur_opt[1]
         if(cigar_dict[opt] in conRef_opts):
