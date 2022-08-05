@@ -84,7 +84,10 @@ def subset_cigar(aln_seg ,ref_start , ref_end):
     opt_1 = get_cigarLoc_from_rCoord( aln_seg , ref_start  )
     opt_2 = get_cigarLoc_from_rCoord( aln_seg , ref_end  )
     subset_tuples = aln_seg.cigartuples[ opt_1[0] : opt_2[0] + 1 ]    #add 1 at the end because range doens't include last element.
-    subset_tuples[0] , subset_tuples[-1] = (subset_tuples[0][0] , opt_1[1] )  , ( subset_tuples[-1][0] , opt_2[1] )  #change first and last operation lengths to be what get_cigarLoc output ; also need to reassign completely because can't reassign tuples
+    if(len(subset_tuples) == 1):
+        subset_tuples[0] = (subset_tuples[0][0] , opt_2[1] - opt_1[1]) 
+    else:
+        subset_tuples[0] , subset_tuples[-1] = (subset_tuples[0][0] , subset_tuples[0][1] - opt_1[1] )  , ( subset_tuples[-1][0] , opt_2[1] )  #change first and last operation lengths to be what get_cigarLoc output ; also need to reassign completely because can't reassign tuples
     return subset_tuples
 
 
