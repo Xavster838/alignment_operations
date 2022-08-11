@@ -62,9 +62,9 @@ def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
     else:
         q_coord = clip[0] + q_step
     if(aln_seg.is_reverse):
-        assert q_coord in range(clip[1] , clip[0] + aln_seg.query_alignment_length + clip[1] ) , f"problem with arithmetic. q_coord not in than query range : q_coord : {q_coord} ; alignment range : [ {clip[0]} , {clip[0] + aln_seg.query_alignment_length + clip[1]} ]"
+        assert q_coord in range(clip[1] , clip[0] + aln_seg.query_alignment_length + clip[1] + 1 ) , f"problem with arithmetic. q_coord not in than query range : q_coord : {q_coord} ; alignment range : [ {clip[0]} , {clip[0] + aln_seg.query_alignment_length + clip[1]} ]"
     else:
-        assert q_coord in range(clip[0] , clip[0] + aln_seg.query_alignment_length + clip[1] ) , f"problem with arithmetic. q_coord not in than query range : q_coord : {q_coord} ; alignment range : [ {clip[0]} , {clip[0] + aln_seg.query_alignment_length + clip[1]} ]"
+        assert q_coord in range(clip[0] , clip[0] + aln_seg.query_alignment_length + clip[1] + 1 ) , f"problem with arithmetic. q_coord not in than query range : q_coord : {q_coord} ; alignment range : [ {clip[0]} , {clip[0] + aln_seg.query_alignment_length + clip[1]} ]"
     return q_coord
 
 
