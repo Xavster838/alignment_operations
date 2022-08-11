@@ -33,10 +33,10 @@ def get_cigarLoc_from_rCoord( aln_seg , ref_coord ):
     for i, cur_opt in enumerate( aln_seg.cigartuples ):
         opt , l = cur_opt[0] , cur_opt[1]
         if(cigar_dict[opt] in conRef_opts):
-            add_l = min(l, ref_coord - r_loc)
-            r_loc += add_l
+            l = min(l, ref_coord - r_loc)
+            r_loc += l
         if(r_loc == ref_coord):
-            return (i, l - add_l) #length that's left from operation
+            return (i, l)
     raise Exception(f"Got to end of cigar tuple without reaching ref_coordinate {seg.reference_name} : {ref_coord}")
 
 def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
