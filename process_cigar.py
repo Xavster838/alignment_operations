@@ -46,27 +46,33 @@ def get_qCoord_from_cigarLoc( aln_seg , cigar_loc):
                                      2. distance to move up length to get to specific coordinate
        @output : q_coordinate : coordinate in query corresponding to cigar location in the alignment.
     '''
-    q_step = 0  #how far query coordinate will be from query start
-    #assert aln_seg.cigarstring.find("S") == -1 , "Error: Bam needs to be hard clipped, not soft clipped." 
-    clip = [0,0]
-    clip[0] = aln_seg.cigar[0][1] if cigar_dict[ aln_seg.cigar[0][0] ] in ['H' , 'S'] else 0
-    clip[1] = aln_seg.cigar[-1][1] if cigar_dict[ aln_seg.cigar[-1][0] ] in ['H' , 'S'] else 0
-    conQuery = ['M', 'I', 'E', 'X'] #removing soft clip and treating as hard clip.
-    for i in range(0,cigar_loc[0]): #run through all operations up 
-        opt , l = aln_seg.cigartuples[i]
-        if( cigar_dict[opt] in conQuery ):
-            q_step += l
-    q_step += cigar_loc[1] if cigar_dict[ aln_seg.cigartuples[ cigar_loc[0]][0] ] in conQuery else 0 #add to q_step if it's not hard or soft clipping
-    if(aln_seg.is_reverse):
-        q_coord = clip[1] + aln_seg.query_alignment_length - q_step
+    conQuery = {'M', 'I', 'E', 'X'}  # Query-consuming ops
+    cigartuples = aln_seg.cigartuples
+    # Determine clipping on both ends
+    cigar_dict0 = cigar_dict[cigartuples[0][0]]
+    cigar_dictN = cigar_dict[cigartuples[-1][0]]
+    clip_start = cigartuples[0][1] if cigar_dict0 in {'H', 'S'} else 0
+    clip_end = cigartuples[-1][1] if cigar_dictN in {'H', 'S'} else 0
+    # Accumulate query-consuming operations before the target cigar op
+    q_step = sum(length for op, length in cigartuples[:cigar_loc[0]]
+                 if cigar_dict[op] in conQuery)
+    # Add remaining offset if the current op is query-consuming
+    current_op = cigar_dict[cigartuples[cigar_loc[0]][0]]
+    if current_op in conQuery:
+        q_step += cigar_loc[1]
+    # Calculate query coordinate
+    if aln_seg.is_reverse:
+        q_coord = clip_end + aln_seg.query_alignment_length - q_step
     else:
-        q_coord = clip[0] + q_step
-    if(aln_seg.is_reverse):
-        assert q_coord in range(clip[1] , clip[0] + aln_seg.query_alignment_length + clip[1] + 1 ) , f"problem with arithmetic. q_coord not in than query range : q_coord : {q_coord} ; alignment range : [ {clip[0]} , {clip[0] + aln_seg.query_alignment_length + clip[1]} ]"
-    else:
-        assert q_coord in range(clip[0] , clip[0] + aln_seg.query_alignment_length + clip[1] + 1 ) , f"problem with arithmetic. q_coord not in than query range : q_coord : {q_coord} ; alignment range : [ {clip[0]} , {clip[0] + aln_seg.query_alignment_length + clip[1]} ]"
+        q_coord = clip_start + q_step
+    # Sanity check
+    query_len = aln_seg.query_alignment_length
+    if not (0 <= q_coord <= clip_start + query_len + clip_end):
+        raise ValueError(
+            f"q_coord {q_coord} out of range for query: "
+            f"[{clip_start}, {clip_start + query_len + clip_end}]"
+        )
     return q_coord
-
 
 def get_qCoord_from_rCoord(aln_seg , ref_coord):
     ''' given a pysamAlignmentSegment and ref_coordinate, returen the query coordinate cooresponding to that location.
